@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Multi-Dub & Quality Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ytRed: '#FF0000',
+                        ytDark: '#0f0f0f',
+                        ytCard: '#1f1f1f',
+                        ytHover: '#272727',
+                        ytBorder: '#3f3f3f'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-ytDark text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-ytRed selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="w-full border-b border-ytBorder/60 bg-ytDark/90 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-ytRed text-white px-2.5 py-1.5 rounded-xl flex items-center justify-center shadow-lg shadow-ytRed/30">
+                    <i class="fa-brands fa-youtube text-xl"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-black text-base sm:text-lg tracking-tight text-white flex items-center gap-1.5">
+                        YouTube <span class="bg-gradient-to-r from-red-500 to-rose-400 bg-clip-text text-transparent">Dub Studio</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span class="text-[11px] sm:text-xs bg-ytCard border border-ytBorder/80 text-slate-300 font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="hidden sm:inline">Engine Status:</span> Ready
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
+
+        <!-- Search Bar Section -->
+        <div class="bg-ytCard border border-ytBorder/80 rounded-2xl p-4 sm:p-6 shadow-2xl mb-8">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Insert YouTube Link</label>
+            <div class="flex flex-col sm:flex-row gap-2.5">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                    <input type="text" id="videoUrl" placeholder="https://www.youtube.com/watch?v=..." 
+                        class="w-full bg-ytDark border border-ytBorder rounded-xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-ytRed transition text-slate-100 placeholder-slate-500">
+                </div>
+                <button onclick="fetchInfo()" id="fetchBtn" 
+                    class="bg-ytRed hover:bg-red-600 active:scale-95 font-bold text-xs sm:text-sm text-white px-7 py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-ytRed/25 shrink-0">
+                    <span>Extract Media</span>
+                    <i class="fa-solid fa-bolt text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert Notification -->
+        <div id="alertBox" class="hidden p-4 rounded-xl text-xs sm:text-sm font-medium mb-6 flex items-center gap-3"></div>
+
+        <!-- Processing Loader -->
+        <div id="loader" class="hidden text-center py-12 bg-ytCard/50 border border-ytBorder/40 rounded-2xl mb-8">
+            <div class="inline-block relative">
+                <i class="fa-solid fa-spinner fa-spin text-4xl text-ytRed"></i>
+            </div>
+            <p id="loaderText" class="text-xs sm:text-sm text-slate-300 font-medium mt-4">Extracting video streams, dub tracks, and metadata...</p>
+        </div>
+
+        <!-- YOUTUBE VIDEO CARD DISPLAY -->
+        <div id="videoContainer" class="hidden bg-ytCard border border-ytBorder/90 rounded-2xl overflow-hidden shadow-2xl transition-all">
+            
+            <!-- Video Preview Banner & Meta Overlay -->
+            <div class="relative w-full aspect-video sm:aspect-[21/9] bg-slate-950 overflow-hidden group">
+                <img id="thumb" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-500" src="" alt="Thumbnail">
+                <div class="absolute inset-0 bg-gradient-to-t from-ytCard via-ytCard/20 to-transparent"></div>
+                
+                <span id="videoDuration" class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-md border border-white/10">
+                    00:00
+                </span>
+            </div>
+
+            <!-- YouTube Video Metadata Section -->
+            <div class="p-5 sm:p-7 space-y-6">
+                <div>
+                    <h1 id="videoTitle" class="text-base sm:text-xl font-bold text-white leading-snug line-clamp-2"></h1>
+                    
+                    <!-- Channel & Views Bar -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 mt-3 pt-3 border-t border-ytBorder/50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-800 border border-ytBorder flex items-center justify-center text-slate-300 font-bold shrink-0">
+                                <i class="fa-solid fa-user-check text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span id="uploader" class="text-xs sm:text-sm font-semibold text-slate-200"></span>
+                                    <i class="fa-solid fa-circle-check text-ytRed text-[11px]" title="Verified"></i>
+                                </div>
+                                <div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                    <span id="videoViews">0 views</span>
+                                    <span>•</span>
+                                    <span id="videoDate">Recently</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="bg-ytDark border border-ytBorder px-3 py-1.5 rounded-full text-slate-300 font-medium flex items-center gap-1.5">
+                                <i class="fa-regular fa-thumbs-up text-ytRed"></i>
+                                <span>Multi-Audio Dub</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customization Options Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    
+                    <!-- Video Quality Selector -->
+                    <div class="bg-ytDark/80 border border-ytBorder p-3.5 rounded-xl">
+                        <label class="block text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-sliders text-ytRed"></i> Video Resolution
+                        </label>
+                        <select id="resSelect" class="w-full bg-ytCard border border-ytBorder rounded-lg p-2.5 text-xs text-slate-200 focus:border-ytRed outline-none"></select>
+                    </div>
+
+                    <!-- Audio Dub Language Selector -->
+                    <div class="bg-ytDark/80 border border-ytBorder p-3.5 rounded-xl">
+                        <label class="block text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-language text-ytRed"></i> Audio Dub Track
+                        </label>
+                        <select id="audioSelect" class="w-full bg-ytCard border border-ytBorder rounded-lg p-2.5 text-xs text-slate-200 focus:border-ytRed outline-none"></select>
+                    </div>
+
+                    <!-- Subtitles Selector -->
+                    <div class="bg-ytDark/80 border border-ytBorder p-3.5 rounded-xl">
+                        <label class="block text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-closed-captioning text-ytRed"></i> Subtitles / CC
+                        </label>
+                        <select id="subSelect" class="w-full bg-ytCard border border-ytBorder rounded-lg p-2.5 text-xs text-slate-200 focus:border-ytRed outline-none"></select>
+                    </div>
+
+                </div>
+
+                <!-- Action Button -->
+                <button onclick="processDownload()" id="downloadBtn" 
+                    class="w-full bg-gradient-to-r from-ytRed to-rose-600 hover:from-red-600 hover:to-rose-700 font-bold py-4 rounded-xl text-xs sm:text-sm text-white transition flex items-center justify-center gap-2 shadow-xl shadow-ytRed/20">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                    <span>Merge Selected Quality & Dub Track</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Download Final Action Button -->
+        <div id="readySection" class="hidden mt-6 text-center">
+            <a id="saveBtn" href="#" class="inline-flex items-center justify-center gap-2.5 w-full bg-emerald-600 hover:bg-emerald-500 font-bold py-4 rounded-2xl text-xs sm:text-sm text-white transition shadow-xl shadow-emerald-950/40">
+                <i class="fa-solid fa-circle-arrow-down text-base"></i> Save MP4 File to Device
+            </a>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-xs text-slate-500 border-t border-ytBorder/40 bg-ytDark">
+        YouTube Multi-Dub Engine
+    </footer>
+
+    <script>
+        // -------------------------------------------------------------
+        // PASTE YOUR LIVE RENDER BACKEND URL HERE (No trailing slash)
+        // -------------------------------------------------------------
+        const BACKEND_URL = "https://youtubevideolanguageb.vercel.app/";
+
+        function showAlert(msg, isError = true) {
+            const box = document.getElementById('alertBox');
+            box.innerText = msg;
+            box.className = isError 
+                ? 'p-4 rounded-xl text-xs sm:text-sm font-medium mb-6 bg-red-500/10 border border-red-500/30 text-red-300' 
+                : 'p-4 rounded-xl text-xs sm:text-sm font-medium mb-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300';
+            box.classList.remove('hidden');
+        }
+
+        function clearAlert() {
+            document.getElementById('alertBox').classList.add('hidden');
+        }
+
+        async function fetchInfo() {
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) return showAlert("Please insert a valid YouTube video URL.");
+
+            clearAlert();
+            document.getElementById('videoContainer').classList.add('hidden');
+            document.getElementById('readySection').classList.add('hidden');
+            document.getElementById('loader').classList.remove('hidden');
+            document.getElementById('loaderText').innerText = "Fetching YouTube video card metadata & multi-audio streams...";
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/fetch_info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Failed to fetch video details.");
+
+                // Render YouTube Video Card Data
+                document.getElementById('thumb').src = data.thumbnail;
+                document.getElementById('videoTitle').innerText = data.title;
+                document.getElementById('uploader').innerText = data.uploader;
+                document.getElementById('videoViews').innerText = data.views;
+                document.getElementById('videoDate').innerText = data.upload_date;
+                document.getElementById('videoDuration').innerText = data.duration;
+
+                // Render Resolutions
+                const resSelect = document.getElementById('resSelect');
+                resSelect.innerHTML = data.videos.map(v => 
+                    `<option value="${v.id}">${v.resolution} (${v.ext.toUpperCase()})</option>`
+                ).join('');
+
+                // Render Audio Dubs
+                const audioSelect = document.getElementById('audioSelect');
+                audioSelect.innerHTML = data.audios.map(a => 
+                    `<option value="${a.id}">${a.label}</option>`
+                ).join('');
+
+                // Render Subtitles
+                const subSelect = document.getElementById('subSelect');
+                subSelect.innerHTML = data.subtitles.map(s => 
+                    `<option value="${s.id}">${s.label}</option>`
+                ).join('');
+
+                document.getElementById('videoContainer').classList.remove('hidden');
+            } catch (err) {
+                showAlert(err.message);
+            } finally {
+                document.getElementById('loader').classList.add('hidden');
+            }
+        }
+
+        async function processDownload() {
+            const url = document.getElementById('videoUrl').value.trim();
+            const resolution = document.getElementById('resSelect').value;
+            const audio_lang = document.getElementById('audioSelect').value;
+            const sub_lang = document.getElementById('subSelect').value;
+
+            clearAlert();
+            document.getElementById('loader').classList.remove('hidden');
+            document.getElementById('loaderText').innerText = "Merging high-quality video with selected audio dub via FFmpeg... Please wait.";
+            document.getElementById('readySection').classList.add('hidden');
+
+            const dlBtn = document.getElementById('downloadBtn');
+            dlBtn.disabled = true;
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, resolution, audio_lang, sub_lang })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Muxing failed.");
+
+                const saveBtn = document.getElementById('saveBtn');
+                saveBtn.href = `${BACKEND_URL}${data.download_url}`;
+                document.getElementById('readySection').classList.remove('hidden');
+                showAlert("Processing complete! Click the download button below.", false);
+            } catch (err) {
+                showAlert(err.message);
+            } finally {
+                document.getElementById('loader').classList.add('hidden');
+                dlBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
